@@ -9,4 +9,8 @@ router.get("/:id", getChitGroupById);
 router.put("/:id", updateChitGroup);
 router.delete("/:id", deleteChitGroup);
 
+router.get('/', (req, res) => {
+    res.json({ message: 'Chit Groups route working' });
+});
+
 export default router;

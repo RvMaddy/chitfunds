@@ -13,7 +13,27 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model ChitMember {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(50)
+  phoneNumber String
+  email       String   @unique
+  address     String
+  joinDate    DateTime @default(now())
+  status      Status   @default(ACTIVE)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
+  @@map("chit_members")
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+
+  @@map("member_status")
+}
 
 model ChitGroup {
   group_id             Int      @id @default(autoincrement())
@@ -31,5 +51,17 @@ model ChitGroup {
   no_of_installments   Int
   maximum_bid_percentage Decimal
   created_at           DateTime @default(now())
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  isAdmin   Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
 }
 

@@ -1,53 +1,70 @@
-
-// import express from "express"
-// import bodyParser from 'body-parser'
-// import cors from 'cors'
-// import chitMembersRoutes from './routes/chitMembersRoutes.js'
-// import authRoutes from './routes/authRoutes.js';
-// // Create an instance of Express
-// const app = express();
-
-// // Middleware
-// app.use(cors()); // Allow cross-origin requests (for frontend React app)
-// app.use(bodyParser.json()); // Parse incoming JSON requests
-
-// // Use chit members routes
-// app.use('/api/login', authRoutes);
-// app.use('/api/chit_members', chitMembersRoutes);
-
-// // Start the server
-// const PORT = process.env.PORT || 5000;
-// app.listen(PORT, () => {
-//     console.log(`Server running on port ${PORT}`);
-// });
-
-
 import express from "express";
-
 import cors from "cors";
 import dotenv from "dotenv";
 import { PrismaClient } from "@prisma/client";
-import chitGroupsRoutes from "./routes/chitGroupsroutes.js";
-import usersRoutes from "./routes/users.routes.js";
 
 dotenv.config();
 
 const app = express();
 const prisma = new PrismaClient();
 
-app.use(cors());
+// Basic middleware
+app.use(cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000'
+}));
 app.use(express.json());
 
-// Routes
-app.use("/api/chit-groups", chitGroupsRoutes);
-app.use("/api/users", usersRoutes);
-
+// Test route
 app.get("/", (req, res) => {
     res.send("ChitFund Backend API is running...");
 });
 
+// Import routes
+try {
+    const chitGroupsRoutes = (await import("./routes/chitGroupsroutes.js")).default;
+    const usersRoutes = (await import("./routes/users.routes.js")).default;
+    const chitMembersRoutes = (await import("./routes/chitMembersRoutes.js")).default;
+
+    // Apply routes
+    app.use("/api/chit-groups", chitGroupsRoutes);
+    app.use("/api/users", usersRoutes);
+    app.use("/api/chitmembers", chitMembersRoutes);
+} catch (error) {
+    console.error('Route import error:', error);
+}
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error('Error:', err);
+    res.status(500).json({
+        message: 'Something went wrong!',
+        error: err.message
+    });
+});
+
+// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+try {
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+} catch (error) {
+    console.error('Server startup error:', error);
+}
+
+// Database connection
+prisma.$connect()
+    .then(() => console.log('Database connected successfully'))
+    .catch((error) => console.error('Database connection error:', error));
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (error) => {
+    console.error('Unhandled Rejection:', error);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    process.exit(1);
 });
 
